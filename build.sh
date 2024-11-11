@@ -12,15 +12,19 @@ set -e
 }
 
 ## Variables
-USE_LTS=1
 GKI_VERSION="android12-5.10"
+USE_LTS_MANIFEST=0
+USE_CUSTOM_MANIFEST=1
+CUSTOM_MANIFEST_REPO="https://github.com/Asteroid21/kernel_manifest_android12-5.10" # depends on USE_CUSTOM_MANIFEST
+CUSTOM_MANIFEST_BRANCH="main" # depends on USE_CUSTOM_MANIFEST
 WORK_DIR=$(pwd)
-IMAGE="$WORK_DIR/out/${GKI_VERSION}/dist/Image"
+KERNEL_IMAGE="$WORK_DIR/out/${GKI_VERSION}/dist/Image"
 TIMEZONE="Asia/Makassar"
 ANYKERNEL_REPO="https://github.com/Asteroid21/Anykernel3"
 ANYKERNEL_BRANCH="gki"
 DATE=$(date +"%y%m%d%H%M%S")
 ZIP_NAME="gki-KVER-KSU-$DATE.zip"
+CLANG_VERSION="r536225"
 
 ## Set timezone
 if [ -n "$TIMEZONE" ] && [ -f /usr/share/zoneinfo/$TIMEZONE ]; then
@@ -41,16 +45,48 @@ curl https://storage.googleapis.com/git-repo-downloads/repo >~/bin/repo
 chmod 777 ~/bin/repo
 
 ## Clone AnyKernel
-git clone --depth=1 $ANYKERNEL_REPO -b $ANYKERNEL_BRANCH anykernel
+if [ -z "$ANYKERNEL_REPO" ]; then
+    echo "[ERROR] ANYKERNEL_REPO var is not defined. Fix your build vars."
+    exit 1
+elif [ -z "$ANYKERNEL_BRANCH" ]; then
+    echo "[ERROR] ANYKERNEL_BRANCH var is not defined. Fix your build vars."
+    exit 1
+fi
+
+git clone --depth=1 $ANYKERNEL_REPO -b $ANYKERNEL_BRANCH $WORK_DIR/anykernel
 
 ## Sync kernel manifest
-if [ "$USE_LTS" = 1 ]; then
+if [ -z "$GKI_VERSION" ]; then
+    echo "[ERROR] GKI_VERSION var is not defined. Fix your build vars."
+    exit 1
+fi
+
+if [ "$USE_CUSTOM_MANIFEST" = 1 ] && [ "$USE_LTS_MANIFEST" = 1 ]; then
+    echo "[ERROR] USE_CUSTOM_MANIFEST can't be used together with USE_LTS_MANIFEST. Fix your build vars."
+    exit 1
+elif [ "$USE_CUSTOM_MANIFEST" = 0 ] && [ "$USE_LTS_MANIFEST" = 1 ]; then
     ~/bin/repo init -u https://android.googlesource.com/kernel/manifest -b common-${GKI_VERSION}-lts
-else
+elif [ "$USE_CUSTOM_MANIFEST" = 0 ] && [ "$USE_LTS_MANIFEST" = 0 ]; then
     ~/bin/repo init -u https://android.googlesource.com/kernel/manifest -b common-${GKI_VERSION}
+elif [ "$USE_CUSTOM_MANIFEST" = 1 ] && [ "$USE_LTS_MANIFEST" = 0 ]; then
+    if [ -z "$CUSTOM_MANIFEST_REPO" ]; then
+        echo "[ERROR] USE_CUSTOM_MANIFEST is defined, but CUSTOM_MANIFEST_REPO is not defined. Fix your build vars."
+        exit 1
+    fi
+    
+    if [ -z "$CUSTOM_MANIFEST_BRANCH" ]; then
+        echo "[ERROR] USE_CUSTOM_MANIFEST is defined, but CUSTOM_MANIFEST_BRANCH is not defined. Fix your build vars."
+        exit 1
+    fi
+    ~/bin/repo init $CUSTOM_MANIFEST_REPO -b $CUSTOM_MANIFEST_BRANCH
 fi
 
 ~/bin/repo sync -j$(nproc --all)
+
+## Clone crdroid's clang
+rm -rf $WORK_DIR/prebuilts-master
+mkdir -p $WORK_DIR/prebuilts-master/clang/host/linux-x86
+git clone --depth=1 https://gitlab.com/crdroidandroid/android_prebuilts_clang_host_linux-x86_clang-${CLANG_VERSION} $WORK_DIR/prebuilts-master/clang/host/linux-x86/clang-${CLANG_VERSION}
 
 ## KernelSU setup
 curl -LSs "https://raw.githubusercontent.com/tiann/KernelSU/main/kernel/setup.sh" | bash -
@@ -59,10 +95,9 @@ curl -LSs "https://raw.githubusercontent.com/tiann/KernelSU/main/kernel/setup.sh
 cd $WORK_DIR/common
 for p in $WORK_DIR/patches/*; do
     if ! git am -3 <$p; then
-        # Force use fuzzy patch
         patch -p1 <$p
         git add .
-        git am --continue
+        git am --continue || { echo "[ERROR] Failed to apply patch $p"; exit 1; }
     fi
 done
 cd $WORK_DIR
@@ -81,7 +116,7 @@ ZIP_NAME=$(echo "$ZIP_NAME" | sed "s/KVER/$KERNEL_VERSION/g")
 ## Zipping
 cd $WORK_DIR/anykernel
 sed -i "s/DUMMY1/$KERNEL_VERSION/g" anykernel.sh
-cp $IMAGE .
+cp $KERNEL_IMAGE .
 zip -r9 $ZIP_NAME *
 mv $ZIP_NAME $WORK_DIR
 cd $WORK_DIR
