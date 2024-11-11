@@ -32,7 +32,7 @@ curl https://storage.googleapis.com/git-repo-downloads/repo > ~/bin/repo
 chmod 777 ~/bin/repo
 
 ## clone anykernel
-git clone --depth=1 https://github.com/eraselk/Anykernel3 -b gki
+git clone --depth=1 https://github.com/Asteroid21/Anykernel3 -b gki
 
 ## sync manifest
 ~/bin/repo init -u https://android.googlesource.com/kernel/manifest -b common-android12-5.10-lts
