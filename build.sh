@@ -2,8 +2,14 @@
 set -e
 
 # Check chat_id and token
-[ -z "$chat_id" ] && { echo "error: please fill your CHAT_ID secret!"; exit 1; }
-[ -z "$token" ] && { echo "error: please fill TOKEN secret!"; exit 1; }
+[ -z "$chat_id" ] && {
+    echo "error: please fill your CHAT_ID secret!"
+    exit 1
+}
+[ -z "$token" ] && {
+    echo "error: please fill TOKEN secret!"
+    exit 1
+}
 
 ## Variables
 USE_LTS=1
@@ -25,13 +31,13 @@ fi
 sudo apt update -y
 sudo apt upgrade -y
 sudo apt install -y bc bison build-essential curl flex glibc-source git gnupg gperf imagemagick \
-lib32ncurses5-dev lib32readline-dev lib32z1-dev liblz4-tool libncurses5 libncurses5-dev \
-libsdl1.2-dev libssl-dev libwxgtk3.0-gtk3-dev libxml2 libxml2-utils lzop pngcrush rsync \
-schedtool squashfs-tools xsltproc zip zlib1g-dev python2
+    lib32ncurses5-dev lib32readline-dev lib32z1-dev liblz4-tool libncurses5 libncurses5-dev \
+    libsdl1.2-dev libssl-dev libwxgtk3.0-gtk3-dev libxml2 libxml2-utils lzop pngcrush rsync \
+    schedtool squashfs-tools xsltproc zip zlib1g-dev python2
 
 ## Install Google's repo
 [ ! -d ~/bin ] && mkdir ~/bin
-curl https://storage.googleapis.com/git-repo-downloads/repo > ~/bin/repo
+curl https://storage.googleapis.com/git-repo-downloads/repo >~/bin/repo
 chmod 777 ~/bin/repo
 
 ## Clone AnyKernel
@@ -48,6 +54,18 @@ fi
 
 ## KernelSU setup
 curl -LSs "https://raw.githubusercontent.com/tiann/KernelSU/main/kernel/setup.sh" | bash -
+
+## Apply patches
+cd $WORK_DIR/common
+for p in $WORK_DIR/patches/*; do
+    if ! git am -3 <$p; then
+        # Force use fuzzy patch
+        patch -p1 <$p
+        git add .
+        git am --continue
+    fi
+done
+cd $WORK_DIR
 
 ## Build GKI
 LTO=$LTO_TYPE BUILD_CONFIG=common/build.config.gki.aarch64 build/build.sh -j$(nproc --all)
@@ -73,12 +91,15 @@ upload_file() {
     local file="$1"
     local msg="$2"
 
-    [ -f "$file" ] && chmod 777 "$file" || { echo "error: File $file not found"; exit 1; }
+    [ -f "$file" ] && chmod 777 "$file" || {
+        echo "error: File $file not found"
+        exit 1
+    }
     curl -s -F document=@"$file" "https://api.telegram.org/bot$token/sendDocument" \
-         -F chat_id="$chat_id" \
-         -F "disable_web_page_preview=true" \
-         -F "parse_mode=markdown" \
-         -F caption="$msg"
+        -F chat_id="$chat_id" \
+        -F "disable_web_page_preview=true" \
+        -F "parse_mode=markdown" \
+        -F caption="$msg"
 }
 
 upload_file "$WORK_DIR/$ZIP_NAME" "GKI $KERNEL_VERSION KSU // $DATE"
