@@ -1,0 +1,43 @@
+name: Build GKI
+
+on:
+  workflow_dispatch:
+   inputs:
+    LTO:
+     description: 'LTO Type'
+     required: true
+     default: 'thin'
+     type: choice
+     options:
+     - 'none'
+     - 'thin'
+     - 'full'
+     
+jobs:
+  build:
+    name: Build GKI Kernel 
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Display input
+      run: |
+        echo "LTO TYPE: ${{ inputs.LTO }}"
+        
+    - name: Swap Space
+      uses: pierotofy/set-swap-space@master
+      with:
+        swap-size-gb: 16
+        
+    - name: Free up storage
+      uses: rokibhasansagar/slimhub_actions@main
+
+    - name: Build
+      run: |
+       [ -x "build.sh" ] || chmod a+x build.sh
+       export LTO_TYPE="${{ inputs.LTO }}"
+       export chat_id="${{ secrets.CHAT_ID }}"
+       export token="${{ secrets.TOKEN }}"
+       ./build.sh
