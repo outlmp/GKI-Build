@@ -56,6 +56,9 @@ fi
 curl -LSs "https://raw.githubusercontent.com/tiann/KernelSU/main/kernel/setup.sh" | bash -
 
 ## Apply patches
+git config --global user.email "eraselk@proton.me"
+git config --global user.name "eraselk"
+
 cd $WORK_DIR/common
 for p in $WORK_DIR/patches/*; do
     if ! git am -3 <$p; then
