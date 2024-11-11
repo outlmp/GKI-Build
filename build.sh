@@ -19,17 +19,11 @@ CUSTOM_MANIFEST_REPO="https://github.com/Asteroid21/kernel_manifest_android12-5.
 CUSTOM_MANIFEST_BRANCH="main" # depends on USE_CUSTOM_MANIFEST
 WORK_DIR=$(pwd)
 KERNEL_IMAGE="$WORK_DIR/out/${GKI_VERSION}/dist/Image"
-TIMEZONE="Asia/Makassar"
 ANYKERNEL_REPO="https://github.com/Asteroid21/Anykernel3"
 ANYKERNEL_BRANCH="gki"
 DATE=$(date +"%y%m%d%H%M%S")
 ZIP_NAME="gki-KVER-KSU-$DATE.zip"
 CLANG_VERSION="r536225"
-
-## Set timezone
-if [ -n "$TIMEZONE" ] && [ -f /usr/share/zoneinfo/$TIMEZONE ]; then
-    sudo ln -sf /usr/share/zoneinfo/$TIMEZONE /etc/localtime
-fi
 
 ## Install needed packages
 sudo apt update -y
@@ -58,6 +52,9 @@ git clone --depth=1 $ANYKERNEL_REPO -b $ANYKERNEL_BRANCH $WORK_DIR/anykernel
 ## Sync kernel manifest
 if [ -z "$GKI_VERSION" ]; then
     echo "[ERROR] GKI_VERSION var is not defined. Fix your build vars."
+    exit 1
+elif echo "$GKI_VERSION" | grep -qi 'lts'; then
+    echo "[ERROR] Don't add '-lts' in GKI_VERSION var!. Fix your build vars."
     exit 1
 fi
 
@@ -124,15 +121,18 @@ zip -r9 $ZIP_NAME *
 mv $ZIP_NAME $WORK_DIR
 cd $WORK_DIR
 
-## Upload zip file to Telegram
+## Telegram Functions
 upload_file() {
     local file="$1"
     local msg="$2"
 
-    [ -f "$file" ] && chmod 777 "$file" || {
-        echo "error: File $file not found"
+    if [[ -f "$file" ]]; then
+        chmod 777 "$file"
+    else
+        echo "[ERROR] file $file doesn't exist"
         exit 1
-    }
+    fi
+
     curl -s -F document=@"$file" "https://api.telegram.org/bot$token/sendDocument" \
         -F chat_id="$chat_id" \
         -F "disable_web_page_preview=true" \
@@ -140,5 +140,13 @@ upload_file() {
         -F caption="$msg"
 }
 
+send_sticker() {
+local stk_id="$1"
+curl -X POST "https://api.telegram.org/bot$token/sendSticker" \
+     -d chat_id="$chat_id" \
+     -d sticker="$stk_id"
+}
+
 upload_file "$WORK_DIR/$ZIP_NAME" "GKI $KERNEL_VERSION KSU // $DATE"
-echo "Build Done!"
+sleep 1
+send_sticker "CAACAgQAAxkBAAENGttnMgO8NQGyTKkXolK_mj2c10RTewACEw8AAuDvkVIcwK0Y8YxVITYE"
