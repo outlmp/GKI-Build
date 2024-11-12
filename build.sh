@@ -147,6 +147,6 @@ curl -X POST "https://api.telegram.org/bot$token/sendSticker" \
      -d sticker="$stk_id"
 }
 
-upload_file "$WORK_DIR/$ZIP_NAME" "GKI $KERNEL_VERSION KSU // $DATE"
+upload_file "$WORK_DIR/$ZIP_NAME" "GKI $KERNEL_VERSION KSU // $RANDOM_HASH"
 sleep 1
 send_sticker "CAACAgQAAxkBAAENGttnMgO8NQGyTKkXolK_mj2c10RTewACEw8AAuDvkVIcwK0Y8YxVITYE"
