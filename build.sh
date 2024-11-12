@@ -21,8 +21,8 @@ WORK_DIR=$(pwd)
 KERNEL_IMAGE="$WORK_DIR/out/${GKI_VERSION}/dist/Image"
 ANYKERNEL_REPO="https://github.com/Asteroid21/Anykernel3"
 ANYKERNEL_BRANCH="gki"
-DATE=$(date +"%y%m%d%H%M%S")
-ZIP_NAME="gki-KVER-KSU-$DATE.zip"
+RANDOM_HASH=$(head -c 20 /dev/urandom | sha1sum | head -c 7)
+ZIP_NAME="gki-KVER-KSU-$RANDOM_HASH.zip"
 CLANG_VERSION="r536225"
 
 ## Install needed packages
