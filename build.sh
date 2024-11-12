@@ -80,20 +80,10 @@ fi
 
 ~/bin/repo sync -j$(nproc --all)
 
-## Download Android clang
+## Clone crdroid's clang
 rm -rf $WORK_DIR/prebuilts-master
-mkdir -p $WORK_DIR/prebuilts-master/clang/host/linux-x86/clang-$CLANG_VERSION
-wget https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/main/clang-${CLANG_VERSION}.tar.gz -O $WORK_DIR/clang.tar.gz || {
-    echo "[ERROR] failed to download Android Clang ${CLANG_VERSION}"
-    exit 1
-}
-
-tar -xf $WORK_DIR/clang.tar.gz -C $WORK_DIR/prebuilts-master/clang/host/linux-x86/clang-$CLANG_VERSION || {
-    echo "[ERROR] failed to unpack Android Clang tarball"
-    exit 1
-}
-
-rm $WORK_DIR/clang.tar.gz
+mkdir -p $WORK_DIR/prebuilts-master/clang/host/linux-x86
+git clone --depth=1 https://gitlab.com/crdroidandroid/android_prebuilts_clang_host_linux-x86_clang-${CLANG_VERSION} $WORK_DIR/prebuilts-master/clang/host/linux-x86/clang-${CLANG_VERSION}
 
 ## KernelSU setup
 curl -LSs "https://raw.githubusercontent.com/tiann/KernelSU/main/kernel/setup.sh" | bash -
