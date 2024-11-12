@@ -97,7 +97,7 @@ for p in $WORK_DIR/patches/*; do
     if ! git am -3 <$p; then
         patch -p1 <$p
         git add .
-        git am --continue || { echo "[ERROR] Failed to apply patch $p"; exit 1; }
+        git am --continue || exit 1
     fi
 done
 cd $WORK_DIR
