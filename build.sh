@@ -24,6 +24,9 @@ ANYKERNEL_BRANCH="gki"
 RANDOM_HASH=$(head -c 20 /dev/urandom | sha1sum | head -c 7)
 ZIP_NAME="gki-KVER-KSU-$RANDOM_HASH.zip"
 CLANG_VERSION="r536225"
+LAST_COMMIT_BUILDER="$(git log --format="%h" -n 1): $(git log --format="%s" -n 1)"
+
+. $WORK_DIR/telegram_functions.sh
 
 ## Install needed packages
 sudo apt update -y
@@ -80,10 +83,21 @@ fi
 
 ~/bin/repo sync -j$(nproc --all)
 
+## Extract kernel version, git commit string, git commit hash
+cd $WORK_DIR/common
+KERNEL_VERSION=$(make kernelversion)
+LAST_COMMIT_KERNEL="$(git log --format="%h" -n 1): $(git log --format="%s" -n 1)"
+cd $WORK_DIR
+
+## Set kernel version in ZIP_NAME
+ZIP_NAME=$(echo "$ZIP_NAME" | sed "s/KVER/$KERNEL_VERSION/g")
+
 ## Clone crdroid's clang
 rm -rf $WORK_DIR/prebuilts-master
 mkdir -p $WORK_DIR/prebuilts-master/clang/host/linux-x86
 git clone --depth=1 https://gitlab.com/crdroidandroid/android_prebuilts_clang_host_linux-x86_clang-${CLANG_VERSION} $WORK_DIR/prebuilts-master/clang/host/linux-x86/clang-${CLANG_VERSION}
+
+COMPILER_STRING="$($WORK_DIR/prebuilts-master/clang/host/linux-x86/clang-${CLANG_VERSION} -v 2>&1 | head -n 1 | sed 's/(https..*//' | sed 's/ version//')"
 
 ## KernelSU setup
 curl -LSs "https://raw.githubusercontent.com/tiann/KernelSU/main/kernel/setup.sh" | bash -
@@ -102,51 +116,34 @@ for p in $WORK_DIR/patches/*; do
 done
 cd $WORK_DIR
 
+text="
+<b>~~~ GKI KSU CI ~~~</b>
+<b>GKI Version</b>: <code>${GKI_VERSION}</code>
+<b>Kernel Version</b>: <code>${KERNEL_VERSION}</code>
+<b>Device</b>: <code>generic</code>
+<b>Zip Output</b>: <code>${ZIP_NAME}</code>
+<b>Compiler</b>: <code>${COMPILER_STRING}</code>
+<b>Last Commit (Builder)</b>: <code>${LAST_COMMIT_BUILDER}</code>
+<b>Last Commit (Kernel)</b>: <code>${LAST_COMMIT_KERNEL}</code>"
+
+send_msg "$text"
+
 ## Build GKI
-LTO=$LTO_TYPE BUILD_CONFIG=common/build.config.gki.aarch64 build/build.sh -j$(nproc --all)
+LTO=$LTO_TYPE BUILD_CONFIG=common/build.config.gki.aarch64 build/build.sh -j$(nproc --all) | tee $WORK_DIR/build_log.txt
 
-## Extract kernel version
-cd $WORK_DIR/common
-KERNEL_VERSION=$(make kernelversion)
-cd $WORK_DIR
+if ! [ -f "$KERNEL_IMAGE" ]; then
+    send_msg "Build failed!"
+    upload_file "$WORK_DIR/build_log.txt" "Build Log"
+else
+    ## Zipping
+    cd $WORK_DIR/anykernel
+    sed -i "s/DUMMY1/$KERNEL_VERSION/g" anykernel.sh
+    cp $KERNEL_IMAGE .
+    zip -r9 $ZIP_NAME *
+    mv $ZIP_NAME $WORK_DIR
+    cd $WORK_DIR
 
-## Set kernel version in ZIP_NAME
-ZIP_NAME=$(echo "$ZIP_NAME" | sed "s/KVER/$KERNEL_VERSION/g")
+    upload_file "$WORK_DIR/$ZIP_NAME" "GKI $KERNEL_VERSION KSU // $RANDOM_HASH"
+    upload_file "$WORK_DIR/build_log.txt" "Build Log"
 
-## Zipping
-cd $WORK_DIR/anykernel
-sed -i "s/DUMMY1/$KERNEL_VERSION/g" anykernel.sh
-cp $KERNEL_IMAGE .
-zip -r9 $ZIP_NAME *
-mv $ZIP_NAME $WORK_DIR
-cd $WORK_DIR
-
-## Telegram Functions
-upload_file() {
-    local file="$1"
-    local msg="$2"
-
-    if [[ -f "$file" ]]; then
-        chmod 777 "$file"
-    else
-        echo "[ERROR] file $file doesn't exist"
-        exit 1
-    fi
-
-    curl -s -F document=@"$file" "https://api.telegram.org/bot$token/sendDocument" \
-        -F chat_id="$chat_id" \
-        -F "disable_web_page_preview=true" \
-        -F "parse_mode=markdown" \
-        -F caption="$msg"
-}
-
-send_sticker() {
-local stk_id="$1"
-curl -X POST "https://api.telegram.org/bot$token/sendSticker" \
-     -d chat_id="$chat_id" \
-     -d sticker="$stk_id"
-}
-
-upload_file "$WORK_DIR/$ZIP_NAME" "GKI $KERNEL_VERSION KSU // $RANDOM_HASH"
-sleep 1
-send_sticker "CAACAgQAAxkBAAENGttnMgO8NQGyTKkXolK_mj2c10RTewACEw8AAuDvkVIcwK0Y8YxVITYE"
+fi
