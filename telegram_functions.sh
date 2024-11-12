@@ -15,7 +15,8 @@ upload_file()
         -F chat_id="$chat_id" \
         -F "disable_web_page_preview=true" \
         -F "parse_mode=markdown" \
-        -F caption="$msg"
+        -F caption="$msg" \
+        -o /dev/null
 }
 
 send_msg()
@@ -25,5 +26,6 @@ curl -s -X POST "https://api.telegram.org/bot$token/sendMessage" \
     -d chat_id="$chat_id" \
     -d "disable_web_page_preview=true" \
     -d "parse_mode=html" \
-    -d text="$msg"
+    -d text="$msg" \
+    -o /dev/null
 }
