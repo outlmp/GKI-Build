@@ -16,7 +16,7 @@ GKI_VERSION="android12-5.10"
 USE_LTS_MANIFEST=0
 USE_CUSTOM_MANIFEST=1
 CUSTOM_MANIFEST_REPO="https://github.com/negroweed/kernel_manifest_android12-5.10" # depends on USE_CUSTOM_MANIFEST
-CUSTOM_MANIFEST_BRANCH="main" # depends on USE_CUSTOM_MANIFEST
+CUSTOM_MANIFEST_BRANCH="main"                                                      # depends on USE_CUSTOM_MANIFEST
 WORK_DIR=$(pwd)
 KERNEL_IMAGE="$WORK_DIR/out/${GKI_VERSION}/dist/Image"
 ANYKERNEL_REPO="https://github.com/negroweed/Anykernel3"
@@ -74,7 +74,7 @@ elif [ "$USE_CUSTOM_MANIFEST" = 1 ] && [ "$USE_LTS_MANIFEST" = 0 ]; then
         echo "[ERROR] USE_CUSTOM_MANIFEST is defined, but CUSTOM_MANIFEST_REPO is not defined. Fix your build vars."
         exit 1
     fi
-    
+
     if [ -z "$CUSTOM_MANIFEST_BRANCH" ]; then
         echo "[ERROR] USE_CUSTOM_MANIFEST is defined, but CUSTOM_MANIFEST_BRANCH is not defined. Fix your build vars."
         exit 1
@@ -98,10 +98,13 @@ rm -rf $WORK_DIR/prebuilts-master
 mkdir -p $WORK_DIR/prebuilts-master/clang/host/linux-x86
 git clone --depth=1 https://gitlab.com/crdroidandroid/android_prebuilts_clang_host_linux-x86_clang-${AOSP_CLANG_VERSION} $WORK_DIR/prebuilts-master/clang/host/linux-x86/clang-${AOSP_CLANG_VERSION}
 
-COMPILER_STRING="$($WORK_DIR/prebuilts-master/clang/host/linux-x86/clang-${AOSP_CLANG_VERSION}/bin/clang -v 2>&1 | head -n 1 | sed 's/(https..*//' | sed 's/ version//')"
+COMPILER_STRING=$($WORK_DIR/prebuilts-master/clang/host/linux-x86/clang-${AOSP_CLANG_VERSION}/bin/clang -v 2>&1 | head -n 1 | sed 's/(https..*//' | sed 's/ version//')
 
 ## KernelSU setup
 curl -LSs "https://raw.githubusercontent.com/tiann/KernelSU/main/kernel/setup.sh" | bash -
+cd $WORK_DIR/common/KernelSU
+KSU_VERSION=$(git describe --abbrev=0 --tags)
+cd $WORK_DIR
 
 ## Apply patches
 git config --global user.email "eraselk@proton.me"
@@ -121,7 +124,7 @@ text="
 *~~~ GKI KSU CI ~~~*
 *GKI Version*: \`${GKI_VERSION}\`
 *Kernel Version*: \`${KERNEL_VERSION}\`
-*Device*: \`generic\`
+*KSU Version*: \`${KSU_VERSION}\`
 *LTO Mode*: \`${LTO_TYPE}\`
 *Host OS*: \`$(lsb_release -d -s)\`
 *CPU Cores*: \`$(nproc --all)\`
@@ -159,7 +162,7 @@ else
     mv $ZIP_NAME $WORK_DIR
     cd $WORK_DIR
 
-    upload_file "$WORK_DIR/$ZIP_NAME" "GKI $KERNEL_VERSION KSU // $RANDOM_HASH"
+    upload_file "$WORK_DIR/$ZIP_NAME" "GKI $KERNEL_VERSION // KSU $KSU_VERSION"
     upload_file "$WORK_DIR/build_log.txt" "Build Log"
 
 fi
