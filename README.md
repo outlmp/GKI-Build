@@ -1,3 +1,5 @@
-## Build GKI with GitHub Action
+## Build Android GKI with GitHub Actions
 ### Supported GKI version
-android12-5.10
+Currently only support android12-5.10
+
+### Follow [@gacorprjkt](https://t.me/gacorprjkt)
