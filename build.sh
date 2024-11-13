@@ -117,19 +117,29 @@ done
 cd $WORK_DIR
 
 text="
-<b>~~~ GKI KSU CI ~~~</b>
-<b>GKI Version</b>: <code>${GKI_VERSION}</code>
-<b>Kernel Version</b>: <code>${KERNEL_VERSION}</code>
-<b>Device</b>: <code>generic</code>
-<b>Zip Output</b>:
-<code>${ZIP_NAME}</code>
-<b>Compiler</b>:
-<code>${COMPILER_STRING}</code>
-<b>Last Commit (Builder)</b>:
-<code>${LAST_COMMIT_BUILDER}</code>
-<b>Last Commit (Kernel)</b>:
-<code>${LAST_COMMIT_KERNEL}</code>"
-
+*~~~ GKI KSU CI ~~~*
+*GKI Version*: \`${GKI_VERSION}\`
+*Kernel Version*: \`${KERNEL_VERSION}\`
+*Device*: \`generic\`
+*LTO Mode*: \`${LTO_TYPE}\`
+*CPU Cores*: \`$(nproc --all)\`
+*Zip Output*:
+\`\`\`
+${ZIP_NAME}
+\`\`\`
+*Compiler*:
+\`\`\`
+${COMPILER_STRING}
+\`\`\`
+*Last Commit (Builder)*:
+\`\`\`
+${LAST_COMMIT_BUILDER}
+\`\`\`
+*Last Commit (Kernel)*:
+\`\`\`
+${LAST_COMMIT_KERNEL}
+\`\`\`
+"
 send_msg "$text"
 
 ## Build GKI
@@ -143,7 +153,7 @@ else
     cd $WORK_DIR/anykernel
     sed -i "s/DUMMY1/$KERNEL_VERSION/g" anykernel.sh
     cp $KERNEL_IMAGE .
-    zip -r9 $ZIP_NAME *
+    zip -r9 $ZIP_NAME * -x README.md LICENSE
     mv $ZIP_NAME $WORK_DIR
     cd $WORK_DIR
 
