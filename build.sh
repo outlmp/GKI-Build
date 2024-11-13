@@ -29,6 +29,7 @@ LAST_COMMIT_BUILDER=$(git log --format="%s" -n 1)
 . $WORK_DIR/telegram_functions.sh
 
 ## Install needed packages
+sudo add-apt-repository universe
 sudo apt update -y
 sudo apt upgrade -y
 sudo apt install -y bc bison build-essential curl flex glibc-source git gnupg gperf imagemagick \
