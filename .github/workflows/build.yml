@@ -9,9 +9,9 @@ on:
      default: 'thin'
      type: choice
      options:
-     - 'none'
-     - 'thin'
      - 'full'
+     - 'thin'
+     - 'none'
      
 jobs:
   build:
@@ -21,10 +21,6 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v4
-
-    - name: Display input
-      run: |
-        echo "LTO TYPE: ${{ inputs.LTO }}"
         
     - name: Swap Space
       uses: pierotofy/set-swap-space@master
