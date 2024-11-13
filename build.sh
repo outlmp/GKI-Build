@@ -123,6 +123,7 @@ text="
 *Kernel Version*: \`${KERNEL_VERSION}\`
 *Device*: \`generic\`
 *LTO Mode*: \`${LTO_TYPE}\`
+*Host OS*: \`$(lsb_release -d -s)\`
 *CPU Cores*: \`$(nproc --all)\`
 *Zip Output*:
 \`\`\`
