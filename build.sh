@@ -33,9 +33,9 @@ sudo add-apt-repository universe
 sudo apt update -y
 sudo apt upgrade -y
 sudo apt install -y bc bison build-essential curl flex glibc-source git gnupg gperf imagemagick \
-    lib32ncurses5-dev lib32readline-dev lib32z1-dev liblz4-tool libncurses5 libncurses5-dev \
-    libsdl1.2-dev libssl-dev libwxgtk3.0-gtk3-dev libxml2 libxml2-utils lzop pngcrush rsync \
-    schedtool squashfs-tools xsltproc zip zlib1g-dev python2
+    lib32tinfo6 liblz4-tool libncurses6 libncurses-dev libsdl1.2-dev libssl-dev \
+    libwxgtk3.2-dev libxml2 libxml2-utils lzop pngcrush rsync schedtool squashfs-tools \
+    xsltproc zip zlib1g-dev python3
 
 ## Install Google's repo
 [ ! -d ~/bin ] && mkdir ~/bin
