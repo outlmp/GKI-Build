@@ -158,7 +158,7 @@ else
     cd $WORK_DIR/anykernel
     sed -i "s/DUMMY1/$KERNEL_VERSION/g" anykernel.sh
     cp $KERNEL_IMAGE .
-    zip -r9 $ZIP_NAME * -x README.md LICENSE
+    zip -r9 $ZIP_NAME * -x LICENSE
     mv $ZIP_NAME $WORK_DIR
     cd $WORK_DIR
 
