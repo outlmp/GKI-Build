@@ -151,6 +151,8 @@ ${LAST_COMMIT_KERNEL}
 "
 send_msg "$text"
 
+set +e
+
 ## Build GKI
 LTO=$LTO_TYPE BUILD_CONFIG=common/build.config.gki.aarch64 build/build.sh -j$(nproc --all) | tee $WORK_DIR/build_log.txt
 
