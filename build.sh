@@ -20,6 +20,7 @@ USE_CUSTOM_MANIFEST=1
 CUSTOM_MANIFEST_REPO="https://github.com/negroweed/kernel_manifest_android12-5.10" # depends on USE_CUSTOM_MANIFEST
 CUSTOM_MANIFEST_BRANCH="main"                                                      # depends on USE_CUSTOM_MANIFEST
 WORK_DIR=$(pwd)
+BUILDER_DIR="$WORK_DIR/.."
 KERNEL_IMAGE="$WORK_DIR/out/${GKI_VERSION}/dist/Image"
 ANYKERNEL_REPO="https://github.com/negroweed/Anykernel3"
 ANYKERNEL_BRANCH="gki"
@@ -29,7 +30,7 @@ AOSP_CLANG_VERSION="r536225"
 LAST_COMMIT_BUILDER=$(git log --format="%s" -n 1)
 
 # Import telegram functions
-. ../telegram_functions.sh
+. $BUILDER_DIR/telegram_functions.sh
 
 ## Install needed packages
 sudo add-apt-repository universe
@@ -114,7 +115,7 @@ git config --global user.email "eraselk@proton.me"
 git config --global user.name "eraselk"
 
 cd $WORK_DIR/common
-for p in $WORK_DIR/patches/*; do
+for p in $BUILDER_DIR/patches/*; do
     if ! git am -3 <$p; then
         patch -p1 <$p
         git add .
