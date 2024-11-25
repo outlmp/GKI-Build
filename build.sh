@@ -96,7 +96,11 @@ cd $WORK_DIR
 ## Set kernel version in ZIP_NAME
 ZIP_NAME=$(echo "$ZIP_NAME" | sed "s/KVER/$KERNEL_VERSION/g")
 
-## extract 
+## Clone crdroid's clang
+rm -rf $WORK_DIR/prebuilts-master
+mkdir -p $WORK_DIR/prebuilts-master/clang/host/linux-x86
+git clone --depth=1 https://gitlab.com/crdroidandroid/android_prebuilts_clang_host_linux-x86_clang-${AOSP_CLANG_VERSION} $WORK_DIR/prebuilts-master/clang/host/linux-x86/clang-${AOSP_CLANG_VERSION}
+
 COMPILER_STRING=$($WORK_DIR/prebuilts-master/clang/host/linux-x86/clang-${AOSP_CLANG_VERSION}/bin/clang -v 2>&1 | head -n 1 | sed 's/(https..*//' | sed 's/ version//')
 
 ## KernelSU setup
