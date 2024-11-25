@@ -69,9 +69,9 @@ if [ "$USE_CUSTOM_MANIFEST" = 1 ] && [ "$USE_LTS_MANIFEST" = 1 ]; then
     echo "[ERROR] USE_CUSTOM_MANIFEST can't be used together with USE_LTS_MANIFEST. Fix your build vars."
     exit 1
 elif [ "$USE_CUSTOM_MANIFEST" = 0 ] && [ "$USE_LTS_MANIFEST" = 1 ]; then
-    ~/bin/repo init --depth 1 -u https://android.googlesource.com/kernel/manifest -b common-${GKI_VERSION}-lts
+    repo init --depth 1 -u https://android.googlesource.com/kernel/manifest -b common-${GKI_VERSION}-lts
 elif [ "$USE_CUSTOM_MANIFEST" = 0 ] && [ "$USE_LTS_MANIFEST" = 0 ]; then
-    ~/bin/repo init --depth 1 -u https://android.googlesource.com/kernel/manifest -b common-${GKI_VERSION}
+    repo init --depth 1 -u https://android.googlesource.com/kernel/manifest -b common-${GKI_VERSION}
 elif [ "$USE_CUSTOM_MANIFEST" = 1 ] && [ "$USE_LTS_MANIFEST" = 0 ]; then
     if [ -z "$CUSTOM_MANIFEST_REPO" ]; then
         echo "[ERROR] USE_CUSTOM_MANIFEST is defined, but CUSTOM_MANIFEST_REPO is not defined. Fix your build vars."
@@ -82,10 +82,10 @@ elif [ "$USE_CUSTOM_MANIFEST" = 1 ] && [ "$USE_LTS_MANIFEST" = 0 ]; then
         echo "[ERROR] USE_CUSTOM_MANIFEST is defined, but CUSTOM_MANIFEST_BRANCH is not defined. Fix your build vars."
         exit 1
     fi
-    ~/bin/repo init --depth 1 $CUSTOM_MANIFEST_REPO -b $CUSTOM_MANIFEST_BRANCH
+    repo init --depth 1 $CUSTOM_MANIFEST_REPO -b $CUSTOM_MANIFEST_BRANCH
 fi
 
-~/bin/repo sync -c -j$(nproc --all) --no-clone-bundle --optimized-fetch
+repo sync -c -j$(nproc --all) --no-clone-bundle --optimized-fetch
 
 ## Extract kernel version, git commit string
 cd $WORK_DIR/common
