@@ -11,6 +11,8 @@ set -e
     exit 1
 }
 
+mkdir android-kernel && cd android-kernel
+
 ## Variables
 GKI_VERSION="android12-5.10"
 USE_LTS_MANIFEST=0
@@ -26,7 +28,8 @@ ZIP_NAME="gki-KVER-KSU-$RANDOM_HASH.zip"
 AOSP_CLANG_VERSION="r536225"
 LAST_COMMIT_BUILDER=$(git log --format="%s" -n 1)
 
-. $WORK_DIR/telegram_functions.sh
+# Import telegram functions
+. ../telegram_functions.sh
 
 ## Install needed packages
 sudo add-apt-repository universe
@@ -38,9 +41,9 @@ sudo apt install -y bc bison build-essential curl flex glibc-source git gnupg gp
     xsltproc zip zlib1g-dev python3
 
 ## Install Google's repo
-[ ! -d ~/bin ] && mkdir ~/bin
-curl https://storage.googleapis.com/git-repo-downloads/repo >~/bin/repo
-chmod 777 ~/bin/repo
+curl https://storage.googleapis.com/git-repo-downloads/repo -o repo
+sudo mv repo /usr/bin
+sudo chmod +x /usr/bin/repo
 
 ## Clone AnyKernel
 if [ -z "$ANYKERNEL_REPO" ]; then
@@ -66,9 +69,9 @@ if [ "$USE_CUSTOM_MANIFEST" = 1 ] && [ "$USE_LTS_MANIFEST" = 1 ]; then
     echo "[ERROR] USE_CUSTOM_MANIFEST can't be used together with USE_LTS_MANIFEST. Fix your build vars."
     exit 1
 elif [ "$USE_CUSTOM_MANIFEST" = 0 ] && [ "$USE_LTS_MANIFEST" = 1 ]; then
-    ~/bin/repo init -u https://android.googlesource.com/kernel/manifest -b common-${GKI_VERSION}-lts
+    ~/bin/repo init --depth 1 -u https://android.googlesource.com/kernel/manifest -b common-${GKI_VERSION}-lts
 elif [ "$USE_CUSTOM_MANIFEST" = 0 ] && [ "$USE_LTS_MANIFEST" = 0 ]; then
-    ~/bin/repo init -u https://android.googlesource.com/kernel/manifest -b common-${GKI_VERSION}
+    ~/bin/repo init --depth 1 -u https://android.googlesource.com/kernel/manifest -b common-${GKI_VERSION}
 elif [ "$USE_CUSTOM_MANIFEST" = 1 ] && [ "$USE_LTS_MANIFEST" = 0 ]; then
     if [ -z "$CUSTOM_MANIFEST_REPO" ]; then
         echo "[ERROR] USE_CUSTOM_MANIFEST is defined, but CUSTOM_MANIFEST_REPO is not defined. Fix your build vars."
@@ -79,10 +82,10 @@ elif [ "$USE_CUSTOM_MANIFEST" = 1 ] && [ "$USE_LTS_MANIFEST" = 0 ]; then
         echo "[ERROR] USE_CUSTOM_MANIFEST is defined, but CUSTOM_MANIFEST_BRANCH is not defined. Fix your build vars."
         exit 1
     fi
-    ~/bin/repo init $CUSTOM_MANIFEST_REPO -b $CUSTOM_MANIFEST_BRANCH
+    ~/bin/repo init --depth 1 $CUSTOM_MANIFEST_REPO -b $CUSTOM_MANIFEST_BRANCH
 fi
 
-~/bin/repo sync -j$(nproc --all)
+~/bin/repo sync -c -j$(nproc --all) --no-clone-bundle --optimized-fetch
 
 ## Extract kernel version, git commit string
 cd $WORK_DIR/common
@@ -93,11 +96,7 @@ cd $WORK_DIR
 ## Set kernel version in ZIP_NAME
 ZIP_NAME=$(echo "$ZIP_NAME" | sed "s/KVER/$KERNEL_VERSION/g")
 
-## Clone crdroid's clang
-rm -rf $WORK_DIR/prebuilts-master
-mkdir -p $WORK_DIR/prebuilts-master/clang/host/linux-x86
-git clone --depth=1 https://gitlab.com/crdroidandroid/android_prebuilts_clang_host_linux-x86_clang-${AOSP_CLANG_VERSION} $WORK_DIR/prebuilts-master/clang/host/linux-x86/clang-${AOSP_CLANG_VERSION}
-
+## extract 
 COMPILER_STRING=$($WORK_DIR/prebuilts-master/clang/host/linux-x86/clang-${AOSP_CLANG_VERSION}/bin/clang -v 2>&1 | head -n 1 | sed 's/(https..*//' | sed 's/ version//')
 
 ## KernelSU setup
