@@ -86,7 +86,7 @@ elif [ "$USE_CUSTOM_MANIFEST" = 1 ] && [ "$USE_LTS_MANIFEST" = 0 ]; then
     repo init --depth 1 $CUSTOM_MANIFEST_REPO -b $CUSTOM_MANIFEST_BRANCH
 fi
 
-repo sync -c -j$(nproc --all) --no-clone-bundle --optimized-fetch
+repo sync -j$(nproc --all) --force-sync --current-branch --clone-bundle --optimized-fetch --prune
 
 ## Extract kernel version, git commit string
 cd $WORK_DIR/common
