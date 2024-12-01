@@ -43,6 +43,9 @@ jobs:
        [ -x "build.sh" ] || chmod a+x build.sh
        [ -x "telegram_functions.sh" ] || chmod a+x telegram_functions.sh
        export LTO_TYPE="${{ inputs.LTO }}"
+       if [ "${{ inputs.SUSFS4KSU }}" = "Yes" ]; then
+            export USE_KSU_SUSFS=1
+       fi
        export chat_id="${{ secrets.CHAT_ID }}"
        export token="${{ secrets.TOKEN }}"
        ./build.sh
