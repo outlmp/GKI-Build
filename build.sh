@@ -202,10 +202,12 @@ else
     mv $ZIP_NAME $WORK_DIR
     cd $WORK_DIR
     
-    cd $SUSFS_MODULE
-    zip -r9 ksu_susfs_module.zip * -x README.md
-    mv ksu_susfs_module.zip $WORK_DIR
-    cd $WORK_DIR
+    if [ -n "$USE_KSU_SUSFS" ]; then
+        cd $SUSFS_MODULE
+        zip -r9 ksu_susfs_module.zip * -x README.md
+        mv ksu_susfs_module.zip $WORK_DIR
+        cd $WORK_DIR
+    fi
 
     upload_file "$WORK_DIR/$ZIP_NAME" "GKI $KERNEL_VERSION // KSU ${KSU_VERSION}$([ -n "$USE_KSU_SUSFS" ] && echo " // SUSFS4KSU $SUSFS_VERSION")"
     if [ -n "$USE_KSU_SUSFS" ]; then
