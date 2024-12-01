@@ -134,7 +134,7 @@ done
 ## apply susfs4ksu
 if [ -n "$USE_KSU_SUSFS" ]; then
     cp $SUSFS_PATCHES/KernelSU/10_enable_susfs_for_ksu.patch $WORK_DIR/KernelSU/
-    cp $SUSFS_PATCHES/50_add_susfs_in_kernel-${GKI_VERSION}.patch .
+    cp $SUSFS_PATCHES/50_add_susfs_in_gki-${GKI_VERSION}.patch .
     cp $SUSFS_PATCHES/fs/susfs.c ./fs/
     cp $SUSFS_PATCHES/include/linux/susfs.h ./include/linux/
     cp $SUSFS_PATCHES/fs/sus_su.c ./fs/
@@ -142,7 +142,7 @@ if [ -n "$USE_KSU_SUSFS" ]; then
     cd $WORK_DIR/KernelSU
     patch -p1 < 10_enable_susfs_for_ksu.patch || exit 1
     cd $WORK_DIR/common
-    patch -p1 < 50_add_susfs_in_kernel.patch || exit 1
+    patch -p1 < 50_add_susfs_in_gki-${GKI_VERSION}.patch || exit 1
 fi
 
 cd $WORK_DIR
