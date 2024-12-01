@@ -110,7 +110,15 @@ cd $WORK_DIR/KernelSU
 KSU_VERSION=$(git describe --abbrev=0 --tags)
 cd $WORK_DIR
 
-## Apply patches
+## susfs4ksu setup
+if [ -n "$USE_KSU_SUSFS" ]; then
+    git clone --depth=1 https://gitlab.com/simonpunk/susfs4ksu -b gki-${GKI_VERSION}
+    SUSFS_PATCHES="$(pwd)/susfs4ksu/kernel_patches"
+    SUSFS_MODULE="$(pwd)/susfs4ksu/ksu_module_susfs"
+    SUSFS_VERSION=$(grep 'version=' $SUSFS_MODULE/module.prop | cut -f2 -d '=')
+fi
+
+## Apply kernel patches
 git config --global user.email "eraselk@proton.me"
 git config --global user.name "eraselk"
 
@@ -122,6 +130,26 @@ for p in $BUILDER_DIR/patches/*; do
         git am --continue || exit 1
     fi
 done
+
+## apply susfs4ksu
+if [ -n "$USE_KSU_SUSFS" ]; then
+    cp $SUSFS_PATCHES/KernelSU/*.patch $WORK_DIR/KernelSU
+    cp $SUSFS_PATCHES/*.patch .
+    cp $SUSFS_PATCHES/fs/* ./fs
+    cp $SUSFS_PATCHES/include/linux/* ./include/linux
+    if ! git am -3 <*.patch; then
+        patch -p1 <*.patch
+        git add .
+        git am --continue || exit 1
+    fi
+    cd $WORK_DIR/KernelSU
+    if ! git am -3 <*.patch; then
+        patch -p1 <*.patch
+        git add .
+        git am --continue || exit 1
+    fi
+fi
+
 cd $WORK_DIR
 
 text="
@@ -129,6 +157,8 @@ text="
 *GKI Version*: \`${GKI_VERSION}\`
 *Kernel Version*: \`${KERNEL_VERSION}\`
 *KSU Version*: \`${KSU_VERSION}\`
+*Use SUSFS4KSU*: \`$([ -n "$USE_KSU_SUSFS" ] && echo "true" || echo "false")\`
+$([ -n "$USE_KSU_SUSFS" ] && echo "*SUSFS4KSU Version*: \`${SUSFS_VERSION}\`")
 *LTO Mode*: \`${LTO_TYPE}\`
 *Host OS*: \`$(lsb_release -d -s)\`
 *CPU Cores*: \`$(nproc --all)\`
@@ -162,13 +192,25 @@ if ! [ -f "$KERNEL_IMAGE" ]; then
 else
     ## Zipping
     cd $WORK_DIR/anykernel
-    sed -i "s/DUMMY1/$KERNEL_VERSION/g" anykernel.sh
+    if [ -z "$USE_KSU_SUSFS" ]; then
+        sed -i "s/DUMMY1/$KERNEL_VERSION/g" anykernel.sh
+    else
+        sed -i "s/DUMMY1/$KERNEL_VERSION x SUSFS4KSU $SUSFS_VERSION/g" anykernel.sh
+    fi
     cp $KERNEL_IMAGE .
     zip -r9 $ZIP_NAME * -x LICENSE
     mv $ZIP_NAME $WORK_DIR
     cd $WORK_DIR
+    
+    cd $SUSFS_MODULE
+    zip -r9 ksu_susfs_module.zip * -x README.md
+    mv ksu_susfs_module.zip $WORK_DIR
+    cd $WORK_DIR
 
-    upload_file "$WORK_DIR/$ZIP_NAME" "GKI $KERNEL_VERSION // KSU $KSU_VERSION"
+    upload_file "$WORK_DIR/$ZIP_NAME" "GKI $KERNEL_VERSION // KSU ${KSU_VERSION}$([ -n "$USE_KSU_SUSFS" ] && echo " // SUSFS4KSU $SUSFS_VERSION")"
+    if [ -n "$USE_KSU_SUSFS" ]; then
+        upload_file "$WORK_DIR/ksu_susfs_module.zip" "SUSFS4KSU Module"
+    fi
     upload_file "$WORK_DIR/build_log.txt" "Build Log"
 
 fi

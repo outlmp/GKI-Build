@@ -6,12 +6,20 @@ on:
     LTO:
      description: 'LTO Type'
      required: true
-     default: 'thin'
+     default: ''
      type: choice
      options:
      - 'full'
      - 'thin'
      - 'none'
+    SUSFS4KSU:
+     description: 'Do you want to include SUSFS4KSU?'
+     required: true
+     default: ''
+     type: choice
+     options:
+     - 'Yes'
+     - 'No'
      
 jobs:
   build:
