@@ -117,6 +117,8 @@ if [ -n "$USE_KSU_SUSFS" ]; then
     SUSFS_MODULE="$(pwd)/susfs4ksu/ksu_module_susfs"
     SUSFS_VERSION=$(grep 'version=' $SUSFS_MODULE/module.prop | cut -f2 -d '=')
     ZIP_NAME=$(echo "$ZIP_NAME" | sed 's/KSU/KSUxSUSFS/g')
+    cd $WORK_DIR/susfs4ksu
+    LAST_COMMIT_SUSFS=$(git log --format="%s" -n 1)
 fi
 
 ## Apply kernel patches
@@ -148,13 +150,13 @@ fi
 
 cd $WORK_DIR
 
-text="
+text=$(cat <<EOF
 *~~~ GKI KSU CI ~~~*
 *GKI Version*: \`${GKI_VERSION}\`
 *Kernel Version*: \`${KERNEL_VERSION}\`
 *KSU Version*: \`${KSU_VERSION}\`
-*SUSFS4KSU*: \`$([ -n "$USE_KSU_SUSFS" ] && echo "true" || echo "false")\`
-$([ -n "$USE_KSU_SUSFS" ] && echo "*SUSFS4KSU Version*: \`${SUSFS_VERSION}\`")
+*SUSFS4KSU*: \`$([ -n "${USE_KSU_SUSFS}" ] && echo "true" || echo "false")\`
+$([ -n "${USE_KSU_SUSFS}" ] && echo "*SUSFS4KSU Version*: \`${SUSFS_VERSION}\`")
 *LTO Mode*: \`${LTO_TYPE}\`
 *Host OS*: \`$(lsb_release -d -s)\`
 *CPU Cores*: \`$(nproc --all)\`
@@ -174,7 +176,13 @@ ${LAST_COMMIT_BUILDER}
 \`\`\`
 ${LAST_COMMIT_KERNEL}
 \`\`\`
-"
+$([ -n "${USE_KSU_SUSFS}" ] && echo "*Last Commit (SUSFS)*:
+\`\`\`
+${LAST_COMMIT_SUSFS}
+\`\`\`")
+EOF
+)
+
 send_msg "$text"
 
 set +e
