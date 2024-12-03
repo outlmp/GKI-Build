@@ -173,7 +173,7 @@ ${LAST_COMMIT_KERNEL}
 \`\`\`
 $([ -n "${USE_KSU_SUSFS}" ] && echo "*Last Commit (SUSFS)*:
 \`\`\`
-${LAST_COMMIT_S USFS}
+${LAST_COMMIT_SUSFS}
 \`\`\`")
 EOF
 )
