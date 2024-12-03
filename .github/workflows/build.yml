@@ -6,7 +6,7 @@ on:
     LTO:
      description: 'LTO Type'
      required: true
-     default: ''
+     default: 'thin'
      type: choice
      options:
      - 'full'
@@ -20,6 +20,9 @@ on:
      options:
      - 'Yes'
      - 'No'
+    NOTE:
+     description: 'Release Note'
+     required: false
      
 jobs:
   build:
@@ -45,6 +48,9 @@ jobs:
        export LTO_TYPE="${{ inputs.LTO }}"
        if [ "${{ inputs.SUSFS4KSU }}" = "Yes" ]; then
             export USE_KSU_SUSFS=1
+       fi
+       if [ -n "${{ inputs.NOTE }}" ]; then
+            export NOTE="${{ inputs.NOTE }}"
        fi
        export chat_id="${{ secrets.CHAT_ID }}"
        export token="${{ secrets.TOKEN }}"
