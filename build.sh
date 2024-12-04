@@ -155,14 +155,8 @@ $([ -n "${USE_KSU_SUSFS}" ] && echo "*SUSFS4KSU Version*: \`${SUSFS_VERSION}\`")
 *LTO Mode*: \`${LTO_TYPE}\`
 *Host OS*: \`$(lsb_release -d -s)\`
 *CPU Cores*: \`$(nproc --all)\`
-*Zip Output*:
-\`\`\`
-${ZIP_NAME}
-\`\`\`
-*Compiler*:
-\`\`\`
-${COMPILER_STRING}
-\`\`\`
+*Zip Output*: \`${ZIP_NAME}\`
+*Compiler*: \`${COMPILER_STRING}\`
 *Last Commit (Builder)*:
 \`\`\`
 ${LAST_COMMIT_BUILDER}
