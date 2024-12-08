@@ -29,6 +29,8 @@ RANDOM_HASH=$(head -c 20 /dev/urandom | sha1sum | head -c 7)
 ZIP_NAME="gki-KVER-KSU-$RANDOM_HASH.zip"
 AOSP_CLANG_VERSION="r536225"
 LAST_COMMIT_BUILDER=$(git log --format="%s" -n 1)
+# Allow to skip kernel patches
+SKIP_KERNEL_PATCHES=0
 
 # Import telegram functions
 . "$BUILDER_DIR/telegram_functions.sh"
@@ -105,42 +107,44 @@ cd "$WORK_DIR/KernelSU"
 KSU_VERSION=$(git describe --abbrev=0 --tags)
 cd "$WORK_DIR"
 
-## susfs4ksu setup
-if [ -n "$USE_KSU_SUSFS" ]; then
-    git clone --depth=1 "https://gitlab.com/simonpunk/susfs4ksu" -b "gki-${GKI_VERSION}"
-    SUSFS_PATCHES="$(pwd)/susfs4ksu/kernel_patches"
-    SUSFS_MODULE="$(pwd)/susfs4ksu/ksu_module_susfs"
-    SUSFS_VERSION=$(grep 'version=' "$SUSFS_MODULE/module.prop" | cut -f2 -d '=')
-    ZIP_NAME=$(echo "$ZIP_NAME" | sed 's/KSU/KSUxSUSFS/g')
-    cd "$WORK_DIR/susfs4ksu"
-    LAST_COMMIT_SUSFS=$(git log --format="%s" -n 1)
-fi
-
 ## Apply kernel patches
 git config --global user.email "eraselk@proton.me"
 git config --global user.name "eraselk"
 
-cd "$WORK_DIR/common"
-for p in "$BUILDER_DIR/kernel_patches/"*; do
-    if ! git am -3 <"$p"; then
-        patch -p1 <"$p"
-        git add .
-        git am --continue || exit 1
-    fi
-done
+if [ "$SKIP_KERNEL_PATCHES" -eq 0 ]; then
+    cd "$WORK_DIR/common"
+    for p in "$BUILDER_DIR/kernel_patches/"*; do
+        if ! git am -3 <"$p"; then
+            patch -p1 <"$p"
+            git add .
+            git am --continue || exit 1
+        fi
+    done
+fi
 
-## apply susfs4ksu
+## susfs4ksu
 if [ -n "$USE_KSU_SUSFS" ]; then
-    cp "$SUSFS_PATCHES/KernelSU/10_enable_susfs_for_ksu.patch" "$WORK_DIR/KernelSU/"
+    git clone --depth=1 "https://gitlab.com/simonpunk/susfs4ksu" -b "gki-${GKI_VERSION}"
+    SUSFS_PATCHES="$WORK_DIR/susfs4ksu/kernel_patches"
+    SUSFS_MODULE="$WORK_DIR/susfs4ksu/ksu_module_susfs"
+    ZIP_NAME=$(echo "$ZIP_NAME" | sed 's/KSU/KSUxSUSFS/g')
+    cd "$WORK_DIR/susfs4ksu"
+    LAST_COMMIT_SUSFS=$(git log --format="%s" -n 1)
+    
+    cd "$WORK_DIR/common"
     cp "$SUSFS_PATCHES/50_add_susfs_in_gki-${GKI_VERSION}.patch" .
     cp "$SUSFS_PATCHES/fs/susfs.c" ./fs/
     cp "$SUSFS_PATCHES/include/linux/susfs.h" ./include/linux/
     cp "$SUSFS_PATCHES/fs/sus_su.c" ./fs/
     cp "$SUSFS_PATCHES/include/linux/sus_su.h" ./include/linux/
     cd "$WORK_DIR/KernelSU"
+    cp "$SUSFS_PATCHES/KernelSU/10_enable_susfs_for_ksu.patch" .
     patch -p1 < 10_enable_susfs_for_ksu.patch || exit 1
     cd "$WORK_DIR/common"
     patch -p1 < 50_add_susfs_in_gki-${GKI_VERSION}.patch || exit 1
+    
+    SUSFS_VERSION=$(grep -E '^#define SUSFS_VERSION' ./include/linux/susfs.h | cut -d' ' -f3 | sed 's/"//g')
+    SUSFS_MODULE_ZIP="ksu_module_susfs_${SUSFS_VERSION}.zip"
 fi
 
 cd "$WORK_DIR"
@@ -150,8 +154,8 @@ text=$(cat <<EOF
 *GKI Version*: \`${GKI_VERSION}\`
 *Kernel Version*: \`${KERNEL_VERSION}\`
 *KSU Version*: \`${KSU_VERSION}\`
-*SUSFS4KSU*: \`$([ -n "${USE_KSU_SUSFS}" ] && echo "true" || echo "false")\`
-$([ -n "${USE_KSU_SUSFS}" ] && echo "*SUSFS4KSU Version*: \`${SUSFS_VERSION}\`")
+*Include SUSFS*: \`$([ -n "${USE_KSU_SUSFS}" ] && echo "true" || echo "false")\`
+$([ -n "${USE_KSU_SUSFS}" ] && echo "*SUSFS Version*: \`${SUSFS_VERSION}\`")
 *LTO Mode*: \`${LTO_TYPE}\`
 *Host OS*: \`$(lsb_release -d -s)\`
 *CPU Cores*: \`$(nproc --all)\`
@@ -204,14 +208,14 @@ else
     
     if [ -n "$USE_KSU_SUSFS" ]; then
         cd "$SUSFS_MODULE"
-        zip -r9 "ksu_susfs_module_${SUSFS_VERSION}.zip" * -x README.md
-        mv "ksu_susfs_module_${SUSFS_VERSION}.zip" "$WORK_DIR"
+        zip -r9 "$SUSFS_MODULE_ZIP" * -x README.md
+        mv "$SUSFS_MODULE_ZIP" "$WORK_DIR"
         cd "$WORK_DIR"
     fi
 
-    upload_file "$WORK_DIR/$ZIP_NAME" "GKI $KERNEL_VERSION // KSU ${KSU_VERSION}$([ -n "$USE_KSU_SUSFS" ] && echo " // SUSFS4KSU $SUSFS_VERSION")"
+    upload_file "$WORK_DIR/$ZIP_NAME" "GKI $KERNEL_VERSION // KSU ${KSU_VERSION}$([ -n "$USE_KSU_SUSFS" ] && echo " // SUSFS $SUSFS_VERSION")"
     if [ -n "$USE_KSU_SUSFS" ]; then
-        upload_file "$WORK_DIR/ksu_susfs_module_${SUSFS_VERSION}.zip" "SUSFS4KSU Module"
+        upload_file "$WORK_DIR/$SUSFS_MODULE_ZIP" "SUSFS Module"
     fi
     upload_file "$WORK_DIR/build_log.txt" "Build Log"
 fi
