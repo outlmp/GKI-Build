@@ -18,8 +18,8 @@ mkdir -p android-kernel && cd android-kernel
 GKI_VERSION="android12-5.10"
 USE_LTS_MANIFEST=0
 USE_CUSTOM_MANIFEST=1
-CUSTOM_MANIFEST_REPO="https://github.com/negroweed/kernel_manifest_android12-5.10" 
-CUSTOM_MANIFEST_BRANCH="main"                                                     
+CUSTOM_MANIFEST_REPO="https://github.com/ztc1997/android_gki_kernel_5.10_common" 
+CUSTOM_MANIFEST_BRANCH="android12-5.10-2024-11"                                                     
 WORK_DIR=$(pwd)
 BUILDER_DIR="$WORK_DIR/.."
 KERNEL_IMAGE="$WORK_DIR/out/${GKI_VERSION}/dist/Image"
